@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Basic html-only example</title>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+</body>
+<script>
+    const canvas = document.getElementById('canvas')
+    const ctx = canvas.getContext('2d')
+
+    canvas.width = 800
+    canvas.height = 800
+
+    const gridSize = 50
+    const showAxisTickNumbers = false
+
+    let originX = canvas.width / 2
+    let originY = canvas.height / 2
+
+    const f1 = (x) => Math.pow(x, 2) - 4
+    const f2 = (x) => -Math.pow(x, 2) - 2 * x + 2
+
+    const toCanvasX = (x) => originX + (x * gridSize)
+    const toCanvasY = (y) => originY - (y * gridSize)
+
+    
+    const findIntersections = (f1, f2, start = -10, end = 10, step = 0.01) => {
+        const intersections = []
+
+        for(let x = start; x <= end; x += step) {
+            const y1 = f1(x)
+            const y2 = f2(x)
+            const nextX = x + step
+            const nextY1 = f1(nextX)
+            const nextY2 = f2(nextX)
+
+            // If the difference changes sign, we have an intersection
+            if ((y1 - y2) * (nextY1 - nextY2) <= 0) {
+                // Use binary search to refine the intersection point
+                let left = x
+                let right = nextX
+                for(let i = 0; i < 10; i++) { // 10 iterations for precision
+                    const mid = (left + right) / 2
+                    const midY1 = f1(mid)
+                    const midY2 = f2(mid)
+                    if ((f1(left) - f2(left)) * (midY1 - midY2) <= 0) {
+                        right = mid
+                    } else {
+                        left = mid
+                    }
+                }
+
+                const intersectX = (left + right) / 2
+                const intersectY = f1(intersectX)
+
+                // Round to 2 decimal places for display
+                intersections.push({
+                    x: Math.round(intersectX * 100) / 100,
+                    y: Math.round(intersectY * 100) / 100
+                })
+            }
+        }
+
+        return intersections
+    }
+
+    const drawIntersectionPoints = (intersections) => {
+        ctx.fillStyle = '#008000'
+
+        intersections.forEach(point => {
+            const canvasX = toCanvasX(point.x)
+            const canvasY = toCanvasY(point.y)
+
+            // Draw point
+            ctx.beginPath()
+            ctx.arc(canvasX, canvasY, 5, 0, Math.PI * 2)
+            ctx.fill()
+
+            // Draw coordinates
+            ctx.font = '14px Arial'
+            ctx.fillStyle = '#000000'
+            ctx.textAlign = 'left'
+            ctx.textBaseline = 'bottom'
+            ctx.fillText(`(${point.x}, ${point.y})`, canvasX + 10, canvasY - 5)
+        })
+    }
+
+    const drawCoordinateSystem = () =>  {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.lineWidth = 1
+        ctx.strokeStyle = '#000000'
+
+        // Draw X axis
+        ctx.beginPath()
+        ctx.moveTo(0, originY)
+        ctx.lineTo(canvas.width, originY)
+        ctx.stroke()
+
+        // Draw Y axis
+        ctx.beginPath()
+        ctx.moveTo(originX, 0)
+        ctx.lineTo(originX, canvas.height)
+        ctx.stroke()
+
+        // Draw "0" at origin
+        ctx.font = '14px Arial'
+        ctx.textAlign = 'right'
+        ctx.textBaseline = 'top'
+        ctx.fillText('0', originX - 5, originY + 5)
+
+        //  X-axis tick and number drawings
+        for(let i = gridSize; i < canvas.width / 2; i += gridSize) {
+            if (showAxisTickNumbers) {
+                ctx.fillText(i/gridSize, originX + i - 5, originY + 5)
+                ctx.fillText(-i/gridSize, originX - i - 5, originY + 5)
+            }
+
+            ctx.beginPath()
+            ctx.moveTo(originX + i, originY - 5)
+            ctx.lineTo(originX + i, originY + 5)
+            ctx.stroke()
+
+            ctx.beginPath()
+            ctx.moveTo(originX - i, originY - 5)
+            ctx.lineTo(originX - i, originY + 5)
+            ctx.stroke()
+        }
+
+        //  Y-axis tick and number drawings
+        for(let i = gridSize; i < canvas.height / 2; i += gridSize) {
+            if (showAxisTickNumbers) {
+                ctx.fillText(-i / gridSize, originX - 5, originY + i + 5)
+                ctx.fillText(i / gridSize, originX - 5, originY - i + 5)
+            }
+
+            ctx.beginPath()
+            ctx.moveTo(originX - 5, originY + i)
+            ctx.lineTo(originX + 5, originY + i)
+            ctx.stroke()
+
+            ctx.beginPath()
+            ctx.moveTo(originX - 5, originY - i)
+            ctx.lineTo(originX + 5, originY - i)
+            ctx.stroke()
+        }
+    }
+
+    const plotFunction = (fn, color = '#FF0000', stepSize = 0.1) => {
+        ctx.beginPath()
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2
+
+        const startX = -(originX / gridSize)
+        const endX = (canvas.width - originX) / gridSize
+
+        let firstPoint = true
+
+        for(let x = startX; x <= endX; x += stepSize) {
+            const y = fn(x)
+            const canvasX = toCanvasX(x)
+            const canvasY = toCanvasY(y)
+
+            if (firstPoint) {
+                ctx.moveTo(canvasX, canvasY)
+                firstPoint = false
+            } else {
+                ctx.lineTo(canvasX, canvasY)
+            }
+        }
+
+        ctx.stroke()
+    }
+
+    const drawAll = () => {
+        drawCoordinateSystem()
+
+        // Plot the parabolas
+        plotFunction(f1, '#FF0000')
+        plotFunction(f2, '#0000FF')
+
+        // Find and draw intersection points
+        const intersections = findIntersections(f1, f2)
+        drawIntersectionPoints(intersections)
+    }
+
+    drawAll()
+</script>
+</html>

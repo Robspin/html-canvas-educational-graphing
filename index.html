@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Canvas Graph</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="container">
+    <canvas id="canvas"></canvas>
+    <div class="form-container">
+        <form id="formula-form">
+            <div class="input-group">
+                <input type="text" id="formula" placeholder="Enter formula (e.g., x => x^2 + 2)" required>
+                <input type="color" id="color" value="#FF0000">
+                <button type="submit">Add Function</button>
+            </div>
+        </form>
+        <div id="function-list"></div>
+    </div>
+</div>
+<footer>
+    <div>
+        Made by <a href="https://github.com/Robspin" target="_blank">Robspin</a>
+    </div>
+</footer>
+</body>
+<script src="index.js"></script>
+</html>
